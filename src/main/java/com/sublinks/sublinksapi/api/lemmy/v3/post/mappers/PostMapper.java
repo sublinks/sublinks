@@ -5,6 +5,7 @@ import com.sublinks.sublinksapi.api.lemmy.v3.utils.DateUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
+import org.mapstruct.Named;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.lang.Nullable;
 
@@ -31,4 +32,5 @@ public interface PostMapper extends Converter<com.sublinks.sublinksapi.post.enti
   @Mapping(target = "updated", source = "post.updatedAt", dateFormat = DateUtils.FRONT_END_DATE_FORMAT)
   @Mapping(target = "ap_id", source = "post.activityPubId")
   Post convert(@Nullable com.sublinks.sublinksapi.post.entities.Post post);
+
 }

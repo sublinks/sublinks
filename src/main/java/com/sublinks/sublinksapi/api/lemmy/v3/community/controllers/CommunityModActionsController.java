@@ -18,7 +18,6 @@ import com.sublinks.sublinksapi.api.lemmy.v3.enums.ModlogActionType;
 import com.sublinks.sublinksapi.api.lemmy.v3.modlog.services.ModerationLogService;
 import com.sublinks.sublinksapi.api.lemmy.v3.user.services.LemmyPersonService;
 import com.sublinks.sublinksapi.authorization.enums.RolePermissionCommunityTypes;
-import com.sublinks.sublinksapi.authorization.enums.RolePermissionPersonTypes;
 import com.sublinks.sublinksapi.authorization.services.RolePermissionService;
 import com.sublinks.sublinksapi.comment.services.CommentReportService;
 import com.sublinks.sublinksapi.comment.services.CommentService;
@@ -85,7 +84,8 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
           schema = @Schema(implementation = CommunityResponse.class))})})
   @PutMapping("hide")
   CommunityResponse hide(@Valid @RequestBody final HideCommunity hideCommunityForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -111,6 +111,7 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
     moderationLogService.createModerationLog(moderationLog);
 
     return CommunityResponse.builder()
+
         .community_view(lemmyCommunityService.communityViewFromCommunity(community))
         .build();
   }
@@ -151,18 +152,20 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
     moderationLogService.createModerationLog(moderationLog);
 
     return CommunityResponse.builder()
+
         .community_view(lemmyCommunityService.communityViewFromCommunity(community))
         .build();
   }
 
-  @Operation(summary = "A moderator remove for a community.")
+  @Operation(summary = "A moderator pin for a community.")
   @ApiResponses(value = {@ApiResponse(responseCode = "200",
       description = "OK",
       content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
           schema = @Schema(implementation = CommunityResponse.class))})})
   @PostMapping("remove")
   CommunityResponse remove(@Valid @RequestBody final RemoveCommunity removeCommunityForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -175,12 +178,9 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
         .orElseThrow(
             () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "community_not_found"));
 
-    final boolean isAllowed = linkPersonCommunityService.hasLink(community, person,
-        LinkPersonCommunityType.moderator) || linkPersonCommunityService.hasLink(community, person,
-        LinkPersonCommunityType.owner);
-
-    if (!isAllowed) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not_allowed");
+    if (!linkPersonCommunityService.hasAnyLink(person, community,
+        List.of(LinkPersonCommunityType.moderator, LinkPersonCommunityType.owner))) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized");
     }
 
     community.setRemoved(removeCommunityForm.removed());
@@ -199,6 +199,7 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
     moderationLogService.createModerationLog(moderationLog);
 
     return CommunityResponse.builder()
+
         .community_view(lemmyCommunityService.communityViewFromCommunity(community))
         .build();
   }
@@ -210,7 +211,8 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
           schema = @Schema(implementation = GetCommunityResponse.class))})})
   @PostMapping("transfer")
   GetCommunityResponse transfer(@Valid @RequestBody final TransferCommunity transferCommunityForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -222,12 +224,9 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
             (long) transferCommunityForm.community_id())
         .orElseThrow(
             () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "community_not_found"));
-
-    final boolean isAllowed = RolePermissionService.isAdmin(person)
-        || linkPersonCommunityService.hasLink(community, person, LinkPersonCommunityType.owner);
-
-    if (!isAllowed) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not_allowed");
+    if (!linkPersonCommunityService.hasLinkOrAdmin(person, community,
+        LinkPersonCommunityType.owner)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized");
     }
 
     final Person newOwner = personRepository.findById((long) transferCommunityForm.person_id())
@@ -242,6 +241,7 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
             List.of(LinkPersonCommunityType.owner))
         .stream()
         .findFirst()
+
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "owner_not_found"))
         .getPerson();
     linkPersonCommunityService.createLinkPersonCommunityLink(community, oldOwner,
@@ -266,6 +266,7 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
     moderationLogService.createModerationLog(moderationLog);
 
     return GetCommunityResponse.builder()
+
         .community_view(lemmyCommunityService.communityViewFromCommunity(community))
         .build();
   }
@@ -277,20 +278,21 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
           schema = @Schema(implementation = BanFromCommunityResponse.class))})})
   @PostMapping("ban_user")
   BanFromCommunityResponse banUser(@Valid @RequestBody final BanFromCommunity banPersonForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
-    rolePermissionService.isPermitted(person, RolePermissionPersonTypes.MODERATOR_BAN_USER,
+    rolePermissionService.isPermitted(person, RolePermissionCommunityTypes.MODERATOR_BAN_USER,
         () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "unauthorized"));
 
     final Community community = communityRepository.findById((long) banPersonForm.community_id())
         .orElseThrow(
             () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "community_not_found"));
 
-    if (!linkPersonCommunityService.hasAnyLink(community, person,
+    if (!linkPersonCommunityService.hasAnyLinkOrAdmin(person, community,
         List.of(LinkPersonCommunityType.moderator, LinkPersonCommunityType.owner))) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not_allowed");
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized");
     }
 
     final Person personToBan = personRepository.findById((long) banPersonForm.person_id())
@@ -335,6 +337,7 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
 
     return BanFromCommunityResponse.builder()
         .banned(banPersonForm.ban())
+
         .person_view(lemmyPersonService.getPersonView(personToBan))
         .build();
   }
@@ -346,7 +349,8 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
           schema = @Schema(implementation = AddModToCommunityResponse.class))})})
   @PostMapping("mod")
   AddModToCommunityResponse addMod(@Valid @RequestBody AddModToCommunity addModToCommunityForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -365,7 +369,7 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
         LinkPersonCommunityType.owner);
 
     if (!isAllowed) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not_allowed");
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized");
     }
 
     final Person personToAdd = personRepository.findById((long) addModToCommunityForm.person_id())
@@ -389,6 +393,7 @@ public class CommunityModActionsController extends AbstractLemmyApiController {
         .toList();
 
     List<CommunityModeratorView> moderatorsView = moderators.stream()
+
         .map(moderator -> CommunityModeratorView.builder()
             .moderator(conversionService.convert(moderator,
                 com.sublinks.sublinksapi.api.lemmy.v3.user.models.Person.class))

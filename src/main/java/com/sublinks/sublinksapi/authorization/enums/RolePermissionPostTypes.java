@@ -4,6 +4,7 @@ public enum RolePermissionPostTypes implements RolePermissionInterface {
 
   // Person permissions
   READ_POST("post", AuthorizeAction.READ),
+  READ_POST_AGGREGATE("post-aggregate", AuthorizeAction.READ),
   READ_POSTS("posts", AuthorizeAction.READ),
   MARK_POST_AS_READ("post-read", AuthorizeAction.UPDATE),
   CREATE_POST("post", AuthorizeAction.CREATE),

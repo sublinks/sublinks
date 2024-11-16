@@ -161,9 +161,7 @@ public class SiteController extends AbstractLemmyApiController {
     config.reportEmailAdmins(false);
 
     final InstanceConfig instanceConfig = config.build();
-
     instanceConfigService.createInstanceConfig(instanceConfig);
-
     slurFilterService.updateOrCreateLemmySlur(createSiteForm.slur_filter_regex());
 
     instance.setInstanceConfig(instanceConfig);

@@ -50,7 +50,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
 import java.util.List;
+
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,13 +146,13 @@ public class AdminController extends AbstractLemmyApiController {
   @GetMapping("registration_application/count")
   GetUnreadRegistrationApplicationCountResponse registrationApplicationCount(
       @Valid GetUnreadRegistrationApplicationCount getUnreadRegistrationApplicationCountForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
     aclService.canPerson(person)
         .performTheAction(RolePermissionInstanceTypes.INSTANCE_REMOVE_ADMIN)
-
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "unauthorized"));
 
     return GetUnreadRegistrationApplicationCountResponse.builder()
@@ -168,7 +170,8 @@ public class AdminController extends AbstractLemmyApiController {
   @GetMapping("registration_application/list")
   ListRegistrationApplicationsResponse registrationApplicationList(
       @Valid final ListRegistrationApplications listRegistrationApplicationsForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -194,7 +197,8 @@ public class AdminController extends AbstractLemmyApiController {
   @PutMapping("registration_application/approve")
   RegistrationApplicationResponse registrationApplicationApprove(
       @Valid final ApproveRegistrationApplication approveRegistrationApplicationForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -231,7 +235,8 @@ public class AdminController extends AbstractLemmyApiController {
           schema = @Schema(implementation = PurgeItemResponse.class))})})
   @PostMapping("purge/person")
   PurgeItemResponse purgePerson(@Valid @RequestBody final PurgePerson purgePersonForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -242,8 +247,6 @@ public class AdminController extends AbstractLemmyApiController {
     final Person personToPurge = personRepository.findById((long) purgePersonForm.person_id())
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "person_not_found"));
 
-    final int removedPostHistory = postHistoryService.deleteAllByCreator(personToPurge);
-    final int removedCommentHistory = commentHistoryService.deleteAllByCreator(personToPurge);
     // @todo: Log purged history amount?
     // @todo: Implement purging
 
@@ -257,7 +260,8 @@ public class AdminController extends AbstractLemmyApiController {
           schema = @Schema(implementation = PurgeItemResponse.class))})})
   @PostMapping("purge/community")
   PurgeItemResponse purgeCommunity(@Valid @RequestBody final PurgeCommunity purgeCommunityForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -275,7 +279,8 @@ public class AdminController extends AbstractLemmyApiController {
           schema = @Schema(implementation = PurgeItemResponse.class))})})
   @PostMapping("purge/post")
   PurgeItemResponse purgePost(@Valid @RequestBody final PurgePost purgePostForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -302,7 +307,8 @@ public class AdminController extends AbstractLemmyApiController {
           schema = @Schema(implementation = PurgeItemResponse.class))})})
   @PostMapping("purge/comment")
   PurgeItemResponse purgeComment(@Valid @RequestBody final PurgeComment purgeCommentForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 

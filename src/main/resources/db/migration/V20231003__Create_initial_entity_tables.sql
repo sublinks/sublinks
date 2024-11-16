@@ -11,6 +11,14 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+CREATE OR REPLACE FUNCTION fn_search_vector_is_same(search_vector TSVECTOR, text TEXT)
+  RETURNS BOOLEAN AS
+$$
+BEGIN
+  RETURN search_vector @@ to_tsquery('english', text);
+END;
+$$ language 'plpgsql';
+
 /**
  * Comments table
  */
@@ -124,6 +132,10 @@ CREATE TABLE instances
   name            VARCHAR(255)                              NULL,
   description     TEXT                                      NULL,
   sidebar         TEXT                                      NULL,
+  search_vector   TSVECTOR GENERATED ALWAYS AS (to_tsvector('english',
+                                                            coalesce(name, '') ||
+                                                            ' ' ||
+                                                            coalesce(description, ''))) STORED,
   icon_url        TEXT                                      NULL,
   banner_url      TEXT                                      NULL,
   public_key      TEXT                                      NOT NULL,
@@ -203,7 +215,7 @@ CREATE TABLE people
   biography                      TEXT         NULL,
   interface_language             VARCHAR(20)  NULL,
   default_theme                  VARCHAR(255) NULL,
-  default_listing_type           VARCHAR(255) NULL,
+  default_listing_type           VARCHAR(255) NULL     DEFAULT 'List',
   default_sort_type              VARCHAR(255) NULL     DEFAULT 'Active',
   is_show_scores                 BOOL         NOT NULL DEFAULT false,
   is_show_read_posts             BOOL         NOT NULL DEFAULT false,
@@ -218,7 +230,7 @@ CREATE TABLE people
   is_collapse_bot_comments       BOOL         NOT NULL DEFAULT false,
   is_auto_expanding              BOOL         NOT NULL DEFAULT false,
   is_blur_nsfw                   BOOL         NOT NULL DEFAULT false,
-  post_listing_type              VARCHAR(255)          DEFAULT 'List',
+  post_listing_type              VARCHAR(255) NULL     DEFAULT 'List',
   matrix_user_id                 TEXT         NULL,
   public_key                     TEXT         NOT NULL,
   private_key                    TEXT         NULL,
@@ -611,6 +623,8 @@ CREATE TABLE announcements
 (
   id            BIGSERIAL PRIMARY KEY,
   content       TEXT                                      NOT NULL,
+  is_active     BOOL                                      NOT NULL DEFAULT true,
+  creator_id    BIGINT                                    NOT NULL,
   local_site_id BIGINT                                    NOT NULL,
   created_at    TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) NOT NULL,
   updated_at    TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) NOT NULL
@@ -664,14 +678,18 @@ CREATE INDEX IDX_CUSTOM_EMOJI_KEYWORD_CUSTOM_EMOJI_ID ON custom_emoji_keywords (
  */
 CREATE TABLE acl_roles
 (
-  id          BIGSERIAL PRIMARY KEY,
-  name        VARCHAR(255)                              NOT NULL,
-  description TEXT                                      NOT NULL,
-  is_active   BOOL                                      NOT NULL DEFAULT true,
-  expires_at  TIMESTAMP(3)                              NULL,
-  created_at  TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) NOT NULL,
-  updated_at  TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) NOT NULL
+  id            BIGSERIAL PRIMARY KEY,
+  name          VARCHAR(255)                              NOT NULL,
+  description   TEXT                                      NOT NULL,
+  inherits_from BIGINT                                    NULL,
+  is_active     BOOL                                      NOT NULL DEFAULT true,
+  expires_at    TIMESTAMP(3)                              NULL,
+  created_at    TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) NOT NULL,
+  updated_at    TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) NOT NULL
 );
+
+CREATE UNIQUE INDEX IDX_ACL_ROLES_NAME ON acl_roles (name);
+CREATE INDEX IDX_ACL_ROLES_INHERITS_FROM ON acl_roles (inherits_from);
 
 /**
   Role permissions table

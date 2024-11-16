@@ -22,7 +22,8 @@ public class CommunityRepositoryImpl implements CommunitySearchRepository {
 
   @Override
   public List<Community> allCommunitiesBySearchCriteria(
-      final CommunitySearchCriteria communitySearchCriteria) {
+      final CommunitySearchCriteria communitySearchCriteria)
+  {
 
     final CriteriaBuilder cb = em.getCriteriaBuilder();
     final CriteriaQuery<Community> cq = cb.createQuery(Community.class);
@@ -54,6 +55,13 @@ public class CommunityRepositoryImpl implements CommunitySearchRepository {
         break;
       default:
         break;
+    }
+
+    if (communitySearchCriteria.search() != null && !communitySearchCriteria.search()
+        .isEmpty()) {
+      predicates.add(cb.equal(
+          cb.function("fn_search_vector_is_same", Boolean.class, communityTable.get("searchVector"),
+              cb.literal(communitySearchCriteria.search())), true));
     }
 
     cq.where(predicates.toArray(new Predicate[0]));

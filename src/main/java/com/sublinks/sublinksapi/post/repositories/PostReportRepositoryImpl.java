@@ -1,5 +1,7 @@
 package com.sublinks.sublinksapi.post.repositories;
 
+import static com.sublinks.sublinksapi.utils.PaginationUtils.applyPagination;
+
 import com.sublinks.sublinksapi.community.entities.Community;
 import com.sublinks.sublinksapi.person.entities.LinkPersonPost;
 import com.sublinks.sublinksapi.person.entities.Person;
@@ -27,7 +29,8 @@ public class PostReportRepositoryImpl implements PostReportRepositorySearch {
 
   @Override
   public List<PostReport> allPostReportsBySearchCriteria(
-      PostReportSearchCriteria postReportSearchCriteria) {
+      PostReportSearchCriteria postReportSearchCriteria)
+  {
 
     final CriteriaBuilder cb = em.getCriteriaBuilder();
     final CriteriaQuery<PostReport> cq = cb.createQuery(PostReport.class);
@@ -44,10 +47,11 @@ public class PostReportRepositoryImpl implements PostReportRepositorySearch {
       // Join PostG and check community id
       final Join<PostReport, Post> postJoin = postTable.join("post", JoinType.LEFT);
       List<Predicate> communityPredicates = new ArrayList<>();
-      postReportSearchCriteria.community().forEach(community -> {
+      postReportSearchCriteria.community()
+          .forEach(community -> {
 
-        communityPredicates.add(cb.equal(postJoin.get("community"), community));
-      });
+            communityPredicates.add(cb.equal(postJoin.get("community"), community));
+          });
       predicates.add(cb.or(communityPredicates.toArray(new Predicate[0])));
     }
 
@@ -56,18 +60,17 @@ public class PostReportRepositoryImpl implements PostReportRepositorySearch {
     cq.orderBy(cb.desc(postTable.get("createdAt")));
 
     int perPage = Math.min(Math.abs(postReportSearchCriteria.perPage()), 20);
-    int page = Math.max(postReportSearchCriteria.page() - 1, 0);
 
     TypedQuery<PostReport> query = em.createQuery(cq);
-    query.setMaxResults(perPage);
-    query.setFirstResult(page * perPage);
+
+    applyPagination(query, postReportSearchCriteria.page(), perPage);
 
     return query.getResultList();
   }
 
   @Override
-  public long countAllPostReportsByResolvedFalseAndCommunity(
-      @Nullable List<Community> communities) {
+  public long countAllPostReportsByResolvedFalseAndCommunity(@Nullable List<Community> communities)
+  {
 
     final CriteriaBuilder cb = em.getCriteriaBuilder();
     final CriteriaQuery<Long> cq = cb.createQuery(Long.class);
@@ -94,7 +97,8 @@ public class PostReportRepositoryImpl implements PostReportRepositorySearch {
 
     cq.select(cb.count(postReportTable));
 
-    return em.createQuery(cq).getSingleResult();
+    return em.createQuery(cq)
+        .getSingleResult();
   }
 
   @Override
@@ -135,7 +139,8 @@ public class PostReportRepositoryImpl implements PostReportRepositorySearch {
 
   @Override
   public void resolveAllPostReportsByPersonAndCommunity(Person person, Community community,
-      Person resolver) {
+      Person resolver)
+  {
 
     final CriteriaBuilder cb = em.getCriteriaBuilder();
     final CriteriaQuery<PostReport> cq = cb.createQuery(PostReport.class);

@@ -61,7 +61,9 @@ public class Post implements AclEntityInterface {
   Set<LinkPersonPost> linkPersonPost;
 
   @ManyToOne
-  @JoinTable(name = "post_post_cross_post", joinColumns = @JoinColumn(name = "post_id"), inverseJoinColumns = @JoinColumn(name = "cross_post_id"))
+  @JoinTable(name = "post_post_cross_post",
+      joinColumns = @JoinColumn(name = "post_id"),
+      inverseJoinColumns = @JoinColumn(name = "cross_post_id"))
   CrossPost crossPost;
 
   @ManyToOne(fetch = FetchType.EAGER)
@@ -102,7 +104,6 @@ public class Post implements AclEntityInterface {
 
   @Column(nullable = false, name = "removed_state")
   @Enumerated(EnumType.STRING)
-
   private RemovedState removedState;
 
   @Column(nullable = false, name = "is_local")
@@ -148,6 +149,9 @@ public class Post implements AclEntityInterface {
 
   @Column(nullable = true, name = "private_key")
   private String privateKey;
+
+  @Column(nullable = false, updatable = false, insertable = false, name = "search_vector")
+  private String searchVector;
 
   @CreationTimestamp(source = SourceType.DB)
   @Column(updatable = false, nullable = false, name = "created_at")

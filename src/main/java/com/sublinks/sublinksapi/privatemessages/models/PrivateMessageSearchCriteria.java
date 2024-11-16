@@ -6,11 +6,11 @@ import lombok.Builder;
 
 @Builder
 public record PrivateMessageSearchCriteria(
+    String search,
     PrivateMessageSortType privateMessageSortType,
     int perPage,
     int page,
     boolean unreadOnly,
-    Person person
-) {
+    Person person) {
 
 }

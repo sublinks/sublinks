@@ -9,7 +9,6 @@ import lombok.Builder;
 @SuppressWarnings("RecordComponentName")
 public record AddAdmin(
     Integer person_id,
-    Boolean added
-) {
+    Boolean added) {
 
 }

@@ -14,9 +14,10 @@ import com.sublinks.sublinksapi.authorization.enums.RolePermissionPrivateMessage
 import com.sublinks.sublinksapi.authorization.enums.RoleTypes;
 import com.sublinks.sublinksapi.authorization.repositories.RolePermissionsRepository;
 import com.sublinks.sublinksapi.authorization.repositories.RoleRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,18 +30,20 @@ public class InitialRoleSetupService {
 
   private final RoleRepository roleRepository;
   private final RolePermissionsRepository rolePermissionsRepository;
+  private final EntityManager entityManager;
 
   /**
    * Generates the initial roles for the application.
    */
+  @Transactional
   public void generateInitialRoles() {
 
     if (roleRepository.findAll()
         .isEmpty()) {
-      createAdminRole();
-      createBannedRole();
-      createGuestRole();
-      createRegisteredRole();
+      final Role bannedRole = createBannedRole();
+      final Role guestRole = createGuestRole(bannedRole);
+      final Role registeredRole = createRegisteredRole(guestRole);
+      createAdminRole(registeredRole);
     }
   }
 
@@ -50,14 +53,16 @@ public class InitialRoleSetupService {
    * @param role            the role for which the permissions are being saved
    * @param rolePermissions the set of role permissions to be saved
    */
-  private void savePermissions(Role role, Set<RolePermissionInterface> rolePermissions) {
+  protected void savePermissions(Role role, Set<RolePermissionInterface> rolePermissions) {
 
-    role.setRolePermissions(rolePermissions.stream()
-        .map(rolePermission -> rolePermissionsRepository.save(RolePermissions.builder()
+    entityManager.merge(role);
+    rolePermissionsRepository.saveAllAndFlush(rolePermissions.stream()
+        .map(rolePermission -> RolePermissions.builder()
             .role(role)
             .permission(rolePermission.toString())
-            .build()))
-        .collect(Collectors.toSet()));
+            .build())
+        .toList());
+
   }
 
   /**
@@ -65,28 +70,40 @@ public class InitialRoleSetupService {
    *
    * @param rolePermissions the set of role permissions to which common permissions will be added
    */
-  private void applyCommonPermissions(Set<RolePermissionInterface> rolePermissions) {
+  protected void applyCommonPermissions(Set<RolePermissionInterface> rolePermissions) {
 
+    rolePermissions.add(RolePermissionPrivateMessageTypes.READ_PRIVATE_MESSAGE);
     rolePermissions.add(RolePermissionPrivateMessageTypes.READ_PRIVATE_MESSAGES);
     rolePermissions.add(RolePermissionPostTypes.READ_POST);
     rolePermissions.add(RolePermissionPostTypes.READ_POSTS);
     rolePermissions.add(RolePermissionCommentTypes.READ_COMMENT);
+    rolePermissions.add(RolePermissionCommentTypes.READ_COMMENTS);
     rolePermissions.add(RolePermissionCommunityTypes.READ_COMMUNITY);
     rolePermissions.add(RolePermissionCommunityTypes.READ_COMMUNITIES);
     rolePermissions.add(RolePermissionPersonTypes.READ_USER);
+    rolePermissions.add(RolePermissionPersonTypes.READ_USERS);
     rolePermissions.add(RolePermissionModLogTypes.READ_MODLOG);
+    rolePermissions.add(RolePermissionPersonTypes.READ_PERSON_AGGREGATION);
+    rolePermissions.add(RolePermissionCommunityTypes.READ_COMMUNITY_AGGREGATION);
+    rolePermissions.add(RolePermissionCommunityTypes.READ_COMMUNITY_MODERATORS);
+    rolePermissions.add(RolePermissionPersonTypes.USER_LOGIN);
     rolePermissions.add(RolePermissionInstanceTypes.INSTANCE_SEARCH);
+    rolePermissions.add(RolePermissionInstanceTypes.INSTANCE_READ_ANNOUNCEMENT);
+    rolePermissions.add(RolePermissionInstanceTypes.INSTANCE_READ_ANNOUNCEMENTS);
+    rolePermissions.add(RolePermissionInstanceTypes.INSTANCE_READ_CONFIG);
   }
 
   /**
    * Creates the admin role with the specified permissions.
    */
-  private void createAdminRole() {
+  protected void createAdminRole(final Role inheritedRole) {
 
     Set<RolePermissionInterface> rolePermissions = new HashSet<>();
-    Role adminRole = roleRepository.save(Role.builder()
+    Role adminRole = roleRepository.saveAndFlush(Role.builder()
+        .inheritsFrom(inheritedRole)
         .description("Admin role for admins")
         .name(RoleTypes.ADMIN.toString())
+        .rolePermissions(new HashSet<>())
         .isActive(true)
         .build());
 
@@ -96,44 +113,47 @@ public class InitialRoleSetupService {
   /**
    * Creates the guest role with all associated permissions.
    */
-  private void createGuestRole() {
+  protected Role createGuestRole(final Role inheritedRole) {
 
     Set<RolePermissionInterface> rolePermissions = new HashSet<>();
-    applyCommonPermissions(rolePermissions);
 
-    Role defaultUserRole = roleRepository.save(Role.builder()
+    Role defaultUserRole = roleRepository.saveAndFlush(Role.builder()
+        .inheritsFrom(inheritedRole)
         .description("Default role for all users")
         .name(RoleTypes.GUEST.toString())
+        .rolePermissions(new HashSet<>())
         .isActive(true)
         .build());
 
     savePermissions(defaultUserRole, rolePermissions);
+    return defaultUserRole;
   }
 
   /**
    * Creates the banned role with all associated permissions.
    */
-  private void createBannedRole() {
+  protected Role createBannedRole() {
 
     Set<RolePermissionInterface> rolePermissions = new HashSet<>();
     applyCommonPermissions(rolePermissions);
 
-    Role bannedRole = roleRepository.save(Role.builder()
+    Role bannedRole = roleRepository.saveAndFlush(Role.builder()
         .description("Banned role for banned users")
         .name(RoleTypes.BANNED.toString())
+        .rolePermissions(new HashSet<>())
         .isActive(true)
         .build());
 
     savePermissions(bannedRole, rolePermissions);
+    return bannedRole;
   }
 
   /**
    * Creates the registered role with all associated permissions.
    */
-  private void createRegisteredRole() {
+  protected Role createRegisteredRole(final Role inheritedRole) {
 
     Set<RolePermissionInterface> rolePermissions = new HashSet<>();
-    applyCommonPermissions(rolePermissions);
 
     rolePermissions.add(RolePermissionMediaTypes.CREATE_MEDIA);
 
@@ -151,6 +171,8 @@ public class InitialRoleSetupService {
     rolePermissions.add(RolePermissionCommunityTypes.CREATE_COMMUNITY);
     rolePermissions.add(RolePermissionCommunityTypes.UPDATE_COMMUNITY);
     rolePermissions.add(RolePermissionCommunityTypes.DELETE_COMMUNITY);
+    rolePermissions.add(RolePermissionCommunityTypes.READ_COMMUNITY_AGGREGATION);
+    rolePermissions.add(RolePermissionCommunityTypes.READ_COMMUNITY_MODERATORS);
 
     rolePermissions.add(RolePermissionPostTypes.CREATE_POST);
     rolePermissions.add(RolePermissionPostTypes.UPDATE_POST);
@@ -162,11 +184,21 @@ public class InitialRoleSetupService {
 
     rolePermissions.add(RolePermissionPersonTypes.UPDATE_USER_SETTINGS);
     rolePermissions.add(RolePermissionPersonTypes.RESET_PASSWORD);
+    rolePermissions.add(RolePermissionPersonTypes.USER_EXPORT);
+    rolePermissions.add(RolePermissionPersonTypes.READ_USER_OWN_METADATAS);
+    rolePermissions.add(RolePermissionPersonTypes.READ_USER_OWN_METADATA);
+    rolePermissions.add(RolePermissionPersonTypes.INVALIDATE_USER_OWN_METADATA);
+    rolePermissions.add(RolePermissionPersonTypes.DELETE_USER_OWN_METADATA);
+    rolePermissions.add(RolePermissionPersonTypes.MARK_MENTION_AS_READ);
+    rolePermissions.add(RolePermissionPersonTypes.MARK_REPLIES_AS_READ);
+    rolePermissions.add(RolePermissionPersonTypes.READ_MENTION_USER);
+    rolePermissions.add(RolePermissionPersonTypes.READ_REPLIES);
 
     rolePermissions.add(RolePermissionPostTypes.MODERATOR_REMOVE_POST);
     rolePermissions.add(RolePermissionCommentTypes.MODERATOR_REMOVE_COMMENT);
     rolePermissions.add(RolePermissionCommunityTypes.MODERATOR_REMOVE_COMMUNITY);
-    rolePermissions.add(RolePermissionPersonTypes.MODERATOR_BAN_USER);
+    rolePermissions.add(RolePermissionCommunityTypes.MODERATOR_BAN_USER);
+
     rolePermissions.add(RolePermissionCommentTypes.MODERATOR_SPEAK);
     rolePermissions.add(RolePermissionCommentTypes.MODERATOR_SHOW_DELETED_COMMENT);
     rolePermissions.add(RolePermissionPostTypes.MODERATOR_SHOW_DELETED_POST);
@@ -190,12 +222,15 @@ public class InitialRoleSetupService {
     rolePermissions.add(RolePermissionCommunityTypes.REPORT_COMMUNITY_RESOLVE);
     rolePermissions.add(RolePermissionCommunityTypes.REPORT_COMMUNITY_READ);
 
-    Role registeredUserRole = roleRepository.save(Role.builder()
+    Role registeredUserRole = roleRepository.saveAndFlush(Role.builder()
         .description("Default Role for all registered users")
+        .inheritsFrom(inheritedRole)
+        .rolePermissions(new HashSet<>())
         .name(RoleTypes.REGISTERED.toString())
         .isActive(true)
         .build());
 
     savePermissions(registeredUserRole, rolePermissions);
+    return registeredUserRole;
   }
 }

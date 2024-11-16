@@ -19,8 +19,8 @@ public class PostLikeRepositoryImpl implements PostLikeRepositorySearch {
 
   private final EntityManager em;
 
-  public List<PostLike> allPostLikesBySearchCriteria(
-      PostLikeSearchCriteria postLikeSearchCriteria) {
+  public List<PostLike> allPostLikesBySearchCriteria(PostLikeSearchCriteria postLikeSearchCriteria)
+  {
 
     final CriteriaBuilder cb = em.getCriteriaBuilder();
     final CriteriaQuery<PostLike> cq = cb.createQuery(PostLike.class);
@@ -29,8 +29,8 @@ public class PostLikeRepositoryImpl implements PostLikeRepositorySearch {
 
     final List<Predicate> predicates = new ArrayList<>();
 
-    predicates.add(
-        cb.equal(commentLikeTable.get("post").get("id"), postLikeSearchCriteria.postId()));
+    predicates.add(cb.equal(commentLikeTable.get("post")
+        .get("id"), postLikeSearchCriteria.postId()));
 
     cq.where(predicates.toArray(new Predicate[0]));
 

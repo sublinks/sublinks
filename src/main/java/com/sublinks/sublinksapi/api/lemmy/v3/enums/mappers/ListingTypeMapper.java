@@ -5,7 +5,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
-public interface LemmyListingTypeMapper {
+public interface ListingTypeMapper {
 
   ListingType map(com.sublinks.sublinksapi.api.lemmy.v3.enums.ListingType listingType);
 }

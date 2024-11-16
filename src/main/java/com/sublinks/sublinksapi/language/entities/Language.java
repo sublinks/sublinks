@@ -3,6 +3,7 @@ package com.sublinks.sublinksapi.language.entities;
 import com.sublinks.sublinksapi.community.entities.Community;
 import com.sublinks.sublinksapi.instance.entities.Instance;
 import com.sublinks.sublinksapi.person.entities.Person;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -52,8 +53,10 @@ public class Language {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @Column(unique = true)
   private String code;
 
+  @Column(unique = true)
   private String name;
 
   @Override

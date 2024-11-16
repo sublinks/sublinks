@@ -7,12 +7,12 @@ import lombok.Builder;
 
 @Builder
 public record CommunitySearchCriteria(
+    String search,
     SortType sortType,
     ListingType listingType,
     int perPage,
     int page,
-    boolean showNsfw,
-    Person person
-) {
+    Boolean showNsfw,
+    Person person) {
 
 }

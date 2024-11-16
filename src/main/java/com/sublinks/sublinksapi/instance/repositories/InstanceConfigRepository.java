@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface InstanceConfigRepository extends JpaRepository<InstanceConfig, Long> {
 
   Optional<InstanceConfig> findByInstance(Instance instance);
+
+  Optional<InstanceConfig> findByInstance_Domain(String instance_domain);
 }

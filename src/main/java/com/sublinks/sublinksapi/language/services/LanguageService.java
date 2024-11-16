@@ -1,5 +1,6 @@
 package com.sublinks.sublinksapi.language.services;
 
+import com.sublinks.sublinksapi.community.entities.Community;
 import com.sublinks.sublinksapi.instance.entities.Instance;
 import com.sublinks.sublinksapi.language.entities.Language;
 import com.sublinks.sublinksapi.language.repositories.LanguageRepository;
@@ -15,6 +16,14 @@ import org.springframework.stereotype.Service;
 public class LanguageService {
 
   private final LanguageRepository languageRepository;
+
+  public Language getLanguageOfCommunityOrUndefined(final Community community) {
+
+    return community.getLanguages()
+        .stream()
+        .findFirst()
+        .orElse(languageRepository.findLanguageByCode("und"));
+  }
 
   public List<Long> instanceLanguageIds(final Instance instance) {
 

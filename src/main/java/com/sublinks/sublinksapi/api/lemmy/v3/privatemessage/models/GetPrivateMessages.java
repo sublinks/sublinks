@@ -9,7 +9,7 @@ public record GetPrivateMessages(
     Integer page,
     Integer limit,
     Long creator_id,
-    Optional<Boolean> unread_only
+    Boolean unread_only
 ) {
 
 }

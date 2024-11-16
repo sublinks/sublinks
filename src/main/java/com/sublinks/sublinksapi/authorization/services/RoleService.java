@@ -1,7 +1,11 @@
 package com.sublinks.sublinksapi.authorization.services;
 
 import com.sublinks.sublinksapi.authorization.entities.Role;
+import com.sublinks.sublinksapi.authorization.entities.RolePermissions;
 import com.sublinks.sublinksapi.authorization.enums.RoleTypes;
+import com.sublinks.sublinksapi.authorization.events.RoleCreatedPublisher;
+import com.sublinks.sublinksapi.authorization.events.RoleDeletedPublisher;
+import com.sublinks.sublinksapi.authorization.events.RoleUpdatedPublisher;
 import com.sublinks.sublinksapi.authorization.repositories.RoleRepository;
 import com.sublinks.sublinksapi.person.entities.Person;
 import com.sublinks.sublinksapi.person.repositories.PersonRepository;
@@ -15,8 +19,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RoleService {
 
-  final private RoleRepository roleRepository;
+  private final RoleRepository roleRepository;
   private final PersonRepository personRepository;
+  private final RoleCreatedPublisher roleCreatedEventPublisher;
+  private final RoleUpdatedPublisher roleUpdatedEventPublisher;
+  private final RoleDeletedPublisher roleDeletedEventPublisher;
+
 
   /**
    * Retrieves the admin role from the role repository.
@@ -64,7 +72,8 @@ public class RoleService {
    * @throws X The exception provided by the supplier if the default registered role is not found.
    */
   public <X extends Throwable> Role getDefaultRegisteredRole(Supplier<? extends X> supplier)
-      throws X {
+      throws X
+  {
 
     return getDefaultRegisteredRole().orElseThrow(supplier);
   }
@@ -140,5 +149,49 @@ public class RoleService {
 
     return personRepository.findAllByRole(getBannedRole(() -> new RuntimeException(
         "Cannot produce list of banned people because the Banned role doesn't exist.")));
+  }
+
+  public Role createRole(Role role) {
+
+    roleRepository.save(role);
+    roleCreatedEventPublisher.publish(role);
+
+    return role;
+  }
+
+  public Role updateRole(Role role) {
+
+    roleRepository.save(role);
+    roleUpdatedEventPublisher.publish(role);
+
+    return role;
+  }
+
+  public void deleteRole(Role role) {
+
+    roleRepository.delete(role);
+    roleDeletedEventPublisher.publish(role);
+  }
+
+  public RolePermissions getOrCreateRolePermission(Role role, String permission) {
+
+    return role.getRolePermissions()
+        .stream()
+        .filter(rolePermission -> rolePermission.getPermission()
+            .equals(permission))
+        .findFirst()
+        .orElseGet(() -> {
+
+          RolePermissions rolePermission = RolePermissions.builder()
+              .role(role)
+              .permission(permission)
+              .build();
+
+          role.getRolePermissions()
+              .add(rolePermission);
+          this.updateRole(role);
+
+          return rolePermission;
+        });
   }
 }

@@ -71,7 +71,7 @@ public class LinkPersonPostService implements
 
     linkPersonPostRepository.saveAllAndFlush(linkPersonPosts)
         .forEach((link) -> {
-      
+
           this.linkPersonPostCreatedPublisher.publish(link);
         });
   }
@@ -91,7 +91,7 @@ public class LinkPersonPostService implements
 
     this.linkPersonPostRepository.saveAllAndFlush(linkPersonPosts)
         .forEach((link) -> {
-      
+
           linkPersonPostUpdatedPublisher.publish(link);
         });
   }
@@ -114,7 +114,7 @@ public class LinkPersonPostService implements
     if (linkPersonPostOptional.isPresent()) {
       final LinkPersonPost link = linkPersonPostOptional.get();
 
-  
+
       this.linkPersonPostDeletedPublisher.publish(link);
     }
   }
@@ -125,7 +125,7 @@ public class LinkPersonPostService implements
 
     this.linkPersonPostRepository.deleteAll(linkPersonPosts);
     linkPersonPosts.forEach((link) -> {
-  
+
       this.linkPersonPostDeletedPublisher.publish(link);
     });
   }

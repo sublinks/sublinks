@@ -73,7 +73,7 @@ public class ModerationLogService {
    * @param moderationPersonId Moderation Person Id
    * @param otherPersonId      Other Person Id
    * @param page               the page number
-   * @param pageSize           the size limit of a page
+   * @param pageSize           the size perPage of a page
    * @param sort               the sort option
    * @return a Page of moderation logs
    */

@@ -5,6 +5,7 @@ import com.sublinks.sublinksapi.person.entities.Person;
 import java.util.List;
 import java.util.Optional;
 import com.sublinks.sublinksapi.post.entities.Post;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CommentRepository extends JpaRepository<Comment, Long>, CommentRepositorySearch {
@@ -12,4 +13,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long>, Comment
   List<Comment> findByPerson(Person person);
 
   Optional<Comment> findByPost(Post post);
+
+  Optional<Comment> findByPath(String path);
 }

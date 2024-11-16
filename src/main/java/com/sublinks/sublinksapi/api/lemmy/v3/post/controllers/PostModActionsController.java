@@ -75,7 +75,7 @@ public class PostModActionsController extends AbstractLemmyApiController {
   private final PostService postService;
   private final ModerationLogService moderationLogService;
 
-  @Operation(summary = "A moderator remove for a post.")
+  @Operation(summary = "A moderator pin for a post.")
   @ApiResponses(value = {@ApiResponse(responseCode = "200",
       description = "OK",
       content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -106,7 +106,7 @@ public class PostModActionsController extends AbstractLemmyApiController {
           post.getCommunity(), person, LinkPersonCommunityType.owner);
 
       if (!moderatesCommunity) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not_a_moderator");
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized");
       }
     }
 
@@ -164,7 +164,7 @@ public class PostModActionsController extends AbstractLemmyApiController {
           post.getCommunity(), person, LinkPersonCommunityType.owner);
 
       if (!moderatesCommunity) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not_a_moderator");
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized");
       }
     }
 
@@ -214,7 +214,7 @@ public class PostModActionsController extends AbstractLemmyApiController {
           post.getCommunity(), person, LinkPersonCommunityType.owner);
 
       if (!moderatesCommunity) {
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not_a_moderator");
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized");
       }
     }
     switch (featurePostForm.feature_type()) {
@@ -223,7 +223,7 @@ public class PostModActionsController extends AbstractLemmyApiController {
         break;
       case Local:
         if (!isAdmin) {
-          throw new ResponseStatusException(HttpStatus.FORBIDDEN, "not_a_admin");
+          throw new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized");
         }
         post.setFeatured(featurePostForm.featured());
         break;

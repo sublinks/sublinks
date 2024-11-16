@@ -1,6 +1,7 @@
 package com.sublinks.sublinksapi.authorization.services;
 
 import com.sublinks.sublinksapi.authorization.entities.Role;
+import com.sublinks.sublinksapi.authorization.entities.RolePermissions;
 import com.sublinks.sublinksapi.authorization.enums.RolePermissionInterface;
 import com.sublinks.sublinksapi.authorization.enums.RoleTypes;
 import com.sublinks.sublinksapi.community.entities.Community;
@@ -9,11 +10,14 @@ import com.sublinks.sublinksapi.person.entities.Person;
 import com.sublinks.sublinksapi.person.enums.LinkPersonCommunityType;
 import com.sublinks.sublinksapi.person.services.LinkPersonCommunityService;
 import jakarta.annotation.Nullable;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
 /**
@@ -26,6 +30,7 @@ public class RolePermissionService {
   private final RoleService roleService;
   private final LinkPersonCommunityService linkPersonCommunityService;
   private final CommunityRepository communityRepository;
+  private final ConversionService conversionService;
 
   /**
    * Checks if a role is banned.
@@ -112,7 +117,8 @@ public class RolePermissionService {
    * @throws X The exception provided by the exceptionSupplier if the person is not an admin.
    */
   public static <X extends Throwable> void isAdminElseThrow(Person person,
-      Supplier<? extends X> exceptionSupplier) throws X {
+      Supplier<? extends X> exceptionSupplier) throws X
+  {
 
     if (!isAdmin(person)) {
       throw exceptionSupplier.get();
@@ -127,7 +133,8 @@ public class RolePermissionService {
    * @return True if the person is permitted, false otherwise.
    */
   public boolean isPermitted(@Nullable final Person person,
-      final RolePermissionInterface rolePermission) {
+      final RolePermissionInterface rolePermission)
+  {
 
     final Role role = person == null ? roleService.getDefaultGuestRole(
         () -> new RuntimeException("No Guest role found.")) : person.getRole();
@@ -142,8 +149,8 @@ public class RolePermissionService {
    * @param rolePermission The permission to check.
    * @return True if the role is permitted, false otherwise.
    */
-  public boolean isPermitted(@NonNull final Role role,
-      final RolePermissionInterface rolePermission) {
+  public boolean isPermitted(@NonNull final Role role, final RolePermissionInterface rolePermission)
+  {
 
     return isAdmin(role) || doesRoleHavePermission(role, rolePermission);
   }
@@ -156,7 +163,8 @@ public class RolePermissionService {
    * @return True if the role is permitted, false otherwise.
    */
   public boolean isPermitted(@NonNull final Role role,
-      final Set<RolePermissionInterface> rolePermissions) {
+      final Set<RolePermissionInterface> rolePermissions)
+  {
 
     return rolePermissions.stream()
         .anyMatch(x -> doesRoleHavePermission(role, x));
@@ -174,7 +182,8 @@ public class RolePermissionService {
    */
   public <X extends Throwable> void isPermitted(@NonNull final Role role,
       final Set<RolePermissionInterface> rolePermissions, Supplier<? extends X> exceptionSupplier)
-      throws X {
+      throws X
+  {
 
     if (!isPermitted(role, rolePermissions)) {
       throw exceptionSupplier.get();
@@ -193,7 +202,8 @@ public class RolePermissionService {
    */
   public <X extends Throwable> void isPermitted(final Person person,
       final Set<RolePermissionInterface> rolePermissions, Supplier<? extends X> exceptionSupplier)
-      throws X {
+      throws X
+  {
 
     final Role role = person == null ? roleService.getDefaultGuestRole(
         () -> new RuntimeException("No Guest role found.")) : person.getRole();
@@ -213,7 +223,8 @@ public class RolePermissionService {
    */
   public <X extends Throwable> void isPermitted(@NonNull final Role role,
       final RolePermissionInterface rolePermission, Supplier<? extends X> exceptionSupplier)
-      throws X {
+      throws X
+  {
 
     if (!isPermitted(role, rolePermission)) {
       throw exceptionSupplier.get();
@@ -232,7 +243,8 @@ public class RolePermissionService {
    */
   public <X extends Throwable> void isPermitted(final Person person,
       final RolePermissionInterface rolePermission, Supplier<? extends X> exceptionSupplier)
-      throws X {
+      throws X
+  {
 
     if (person != null && person.isDeleted()) {
       throw exceptionSupplier.get();
@@ -253,12 +265,13 @@ public class RolePermissionService {
    * @return True if the person is permitted, false otherwise.
    */
   public boolean isPermitted(final Person person, final RolePermissionInterface rolePermission,
-      final Long communityId) {
+      final Long communityId)
+  {
 
     if (person != null && person.isDeleted()) {
       return false;
     }
-    Role role = null;
+    Role role;
 
     if (person != null) {
       role = isBannedInCommunity(person, communityId) ? this.roleService.getBannedRole()
@@ -283,7 +296,8 @@ public class RolePermissionService {
    */
   public <X extends Throwable> void isPermitted(final Person person,
       final RolePermissionInterface rolePermission, final Long communityId,
-      final Supplier<? extends X> exceptionSupplier) throws X {
+      final Supplier<? extends X> exceptionSupplier) throws X
+  {
 
     if (person != null && person.isDeleted()) {
       throw exceptionSupplier.get();
@@ -306,14 +320,30 @@ public class RolePermissionService {
    * @return True if the role has the permission, false otherwise.
    */
   private boolean doesRoleHavePermission(final Role role,
-      final RolePermissionInterface rolePermission) {
+      final RolePermissionInterface rolePermission)
+  {
 
     if (isAdmin(role)) {
       return true;
     }
-    return role.getRolePermissions()
-        .stream()
-        .anyMatch(x -> x.getPermission()
+    return getRolePermissions(role).stream()
+        .anyMatch(x -> x.toString()
             .equals(rolePermission.toString()));
+  }
+
+  public Set<RolePermissionInterface> getRolePermissions(final Role role) {
+
+    final Set<RolePermissions> rolePermissions = new HashSet<>();
+
+    Role currentRole = role;
+
+    while (currentRole != null) {
+      rolePermissions.addAll(currentRole.getRolePermissions());
+      currentRole = currentRole.getInheritsFrom();
+    }
+
+    return rolePermissions.stream()
+        .map(x -> conversionService.convert(x.getPermission(), RolePermissionInterface.class))
+        .collect(Collectors.toSet());
   }
 }

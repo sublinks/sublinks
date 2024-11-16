@@ -127,7 +127,7 @@ public class UserController extends AbstractLemmyApiController {
     }
 
     rolePermissionService.isPermitted(person, RolePermissionPersonTypes.READ_USER,
-        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "no_permission"));
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized"));
 
     return GetPersonDetailsResponse.builder()
         .person_view(lemmyPersonService.getPersonView(person))
@@ -144,12 +144,13 @@ public class UserController extends AbstractLemmyApiController {
           schema = @Schema(implementation = GetPersonMentionsResponse.class))})})
   @GetMapping("mention")
   GetPersonMentionsResponse mention(@Valid final GetPersonMentions getPersonMentionsForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
     rolePermissionService.isPermitted(person, RolePermissionPersonTypes.READ_MENTION_USER,
-        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "no_permission"));
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized"));
 
     final int page = PaginationControllerUtils.getAbsoluteMinNumber(getPersonMentionsForm.page(),
         1);
@@ -184,12 +185,13 @@ public class UserController extends AbstractLemmyApiController {
           schema = @Schema(implementation = PersonMentionResponse.class))})})
   @PostMapping("mention/mark_as_read")
   PersonMentionResponse mentionMarkAsRead(
-      @Valid final MarkPersonMentionAsRead markPersonMentionAsReadForm, final JwtPerson principal) {
+      @Valid final MarkPersonMentionAsRead markPersonMentionAsReadForm, final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
     rolePermissionService.isPermitted(person, RolePermissionPersonTypes.MARK_MENTION_AS_READ,
-        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "no_permission"));
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized"));
 
     final PersonMention personMention = personMentionRepository.findById(
             (long) markPersonMentionAsReadForm.person_mention_id())
@@ -219,7 +221,7 @@ public class UserController extends AbstractLemmyApiController {
     final Person person = getPersonOrThrowUnauthorized(principal);
 
     rolePermissionService.isPermitted(person, RolePermissionPersonTypes.READ_REPLIES,
-        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "no_permission"));
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized"));
 
     final int page = PaginationControllerUtils.getAbsoluteMinNumber(getReplies.page(), 1);
     final int perPage = PaginationControllerUtils.getAbsoluteMinNumber(getReplies.limit(), 20);
@@ -254,7 +256,7 @@ public class UserController extends AbstractLemmyApiController {
     final Person person = getPersonOrThrowUnauthorized(principal);
 
     rolePermissionService.isPermitted(person, RolePermissionInstanceTypes.INSTANCE_BAN_READ,
-        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "no_permission"));
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized"));
 
     final Collection<PersonView> bannedPersons = roleService.getBannedUsers()
         .stream()
@@ -279,7 +281,7 @@ public class UserController extends AbstractLemmyApiController {
     final Person person = getPersonOrThrowUnauthorized(principal);
 
     rolePermissionService.isPermitted(person, RolePermissionPersonTypes.READ_REPLIES,
-        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "no_permission"));
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized"));
 
     final MarkAllAsReadResponse readReplies = privateMessageService.markAllAsRead(person);
 
@@ -301,12 +303,14 @@ public class UserController extends AbstractLemmyApiController {
   @Transactional
   @PutMapping("save_user_settings")
   public LoginResponse saveUserSettings(@Valid @RequestBody SaveUserSettings saveUserSettingsForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
     rolePermissionService.isPermitted(person, RolePermissionPersonTypes.UPDATE_USER_SETTINGS,
-        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "no_permission"));
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "unauthorized"));
 
     // @todo expand form validation to check for email formatting, etc.
     if (saveUserSettingsForm.show_nsfw() != null) {
@@ -425,14 +429,15 @@ public class UserController extends AbstractLemmyApiController {
           schema = @Schema(implementation = GetUnreadCountResponse.class))})})
   @GetMapping("unread_count")
   GetUnreadCountResponse unreadCount(@Valid final GetUnreadCount getUnreadCountForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
     rolePermissionService.isPermitted(person,
         Set.of(RolePermissionPersonTypes.READ_MENTION_USER, RolePermissionPersonTypes.READ_REPLIES,
             RolePermissionPrivateMessageTypes.READ_PRIVATE_MESSAGES),
-        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "no_permission"));
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized"));
 
     GetUnreadCountResponse.GetUnreadCountResponseBuilder builder = GetUnreadCountResponse.builder();
 
@@ -463,9 +468,14 @@ public class UserController extends AbstractLemmyApiController {
           schema = @Schema(implementation = SuccessResponse.class))})})
   @PostMapping("import_settings")
   SuccessResponse import_settings(@Valid final ImportSettings importSettingsForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
+
+    rolePermissionService.isPermitted(person, RolePermissionPersonTypes.UPDATE_USER_SETTINGS,
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "unauthorized"));
 
     final SuccessResponse.SuccessResponseBuilder builder = SuccessResponse.builder();
 
@@ -546,6 +556,9 @@ public class UserController extends AbstractLemmyApiController {
   ExportSettingsResponse export_settings(final JwtPerson principal) {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
+
+    rolePermissionService.isPermitted(person, RolePermissionPersonTypes.USER_EXPORT,
+        () -> new ResponseStatusException(HttpStatus.FORBIDDEN, "unauthorized"));
 
     ExportSettingsResponse.ExportSettingsResponseBuilder builder = ExportSettingsResponse.builder();
 

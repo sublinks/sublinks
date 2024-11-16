@@ -4,6 +4,7 @@ import com.sublinks.sublinksapi.api.lemmy.v3.authentication.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,9 +20,10 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Order(2)
 public class SecurityConfig {
 
-  private final JwtFilter jwtFilter;
+  private final JwtFilter lemmyJwtFilter;
 
   /**
    * Returns a configured SecurityFilterChain object for the application's security.
@@ -33,13 +35,14 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
 
-    http
-        .csrf(AbstractHttpConfigurer::disable)
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+    http.csrf(AbstractHttpConfigurer::disable)
+        .securityMatcher("/api/v3/**")
         .authorizeHttpRequests((requests) -> requests.anyRequest()
             .permitAll())
         .sessionManagement((sessionManagement) -> sessionManagement.sessionCreationPolicy(
-            SessionCreationPolicy.STATELESS));
+            SessionCreationPolicy.STATELESS))
+        .addFilterBefore(lemmyJwtFilter, UsernamePasswordAuthenticationFilter.class);
+
     return http.build();
   }
 }

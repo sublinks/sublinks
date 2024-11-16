@@ -29,12 +29,13 @@ public class UserDataService {
   public void invalidate(PersonMetaData personMetaData) {
 
     personMetaData.setActive(false);
-    userDataRepository.save(personMetaData);
+    userDataRepository.saveAndFlush(personMetaData);
     userDataInvalidationEventPublisher.publish(personMetaData);
   }
 
   public void checkAndAddIpRelation(Person person, String ipAddress, String token,
-      @Nullable String userAgent) {
+      @Nullable String userAgent)
+  {
 
     boolean saveUserData = userDataConfig.isSaveUserData();
     Optional<PersonMetaData> foundData = getActiveUserDataByPersonAndToken(person, token);
@@ -70,11 +71,8 @@ public class UserDataService {
   }
 
   private Optional<PersonMetaData> getActiveUserDataByPersonAndIpAddress(Person person,
-      String token, String ipAddress, String userAgent) {
-
-    if (userDataConfig.isSaveUserData()) {
-      return userDataRepository.findFirstByPersonAndTokenAndActiveIsTrue(person, ipAddress);
-    }
+      String token, String ipAddress, String userAgent)
+  {
 
     return userDataRepository.findFirstByPersonAndTokenAndIpAddressAndUserAgentAndActiveIsTrue(
         person, token, ipAddress, userAgent);
@@ -84,6 +82,7 @@ public class UserDataService {
   public void invalidateAllUserData(Person person) {
 
     userDataRepository.updateAllByPersonSetActiveToFalse(person);
+    userDataRepository.flush();
     userDataInvalidationEventPublisher.publish(person);
   }
 

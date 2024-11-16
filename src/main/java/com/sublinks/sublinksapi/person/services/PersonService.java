@@ -63,7 +63,8 @@ public class PersonService {
    */
   @Transactional
   public Optional<Language> getPersonDefaultPostLanguage(final Person person,
-      final Community community) {
+      final Community community)
+  {
 
     for (Language language : person.getLanguages()) {
       if (community.getLanguages()
@@ -217,5 +218,12 @@ public class PersonService {
     person.setAvatarImageUrl("");
 
     personDeletedPublisher.publish(personRepository.save(person), deleteContent);
+  }
+
+  public void updatePassword(Person person, String newPassword) {
+
+    person.setPassword(encodePassword(newPassword));
+    personRepository.save(person);
+
   }
 }

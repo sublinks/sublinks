@@ -1,5 +1,6 @@
 package com.sublinks.sublinksapi.person.services;
 
+import com.sublinks.sublinksapi.authorization.services.RolePermissionService;
 import com.sublinks.sublinksapi.common.interfaces.ILinkingService;
 import com.sublinks.sublinksapi.community.entities.Community;
 import com.sublinks.sublinksapi.person.entities.LinkPersonCommunity;
@@ -11,6 +12,7 @@ import com.sublinks.sublinksapi.person.events.LinkPersonCommunityUpdatedPublishe
 import com.sublinks.sublinksapi.person.repositories.LinkPersonCommunityRepository;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,16 +28,46 @@ public class LinkPersonCommunityService implements
   private final LinkPersonCommunityUpdatedPublisher linkPersonCommunityUpdatedPublisher;
   private final LinkPersonCommunityDeletedPublisher linkPersonCommunityDeletedPublisher;
 
+  public boolean hasLinkOrAdmin(Person person, Community community, LinkPersonCommunityType type) {
+
+    return RolePermissionService.isAdmin(person) || hasLink(person, community, type);
+  }
+
+  public boolean hasAnyLinkOrAdmin(Person person, Community community,
+      List<LinkPersonCommunityType> types)
+  {
+
+    return RolePermissionService.isAdmin(person) || hasAnyLink(person, community, types);
+  }
+
+  public boolean hasLink(Person person, Community community, LinkPersonCommunityType type) {
+
+    final Optional<LinkPersonCommunity> linkPersonCommunity = linkPersonCommunityRepository.getLinkPersonCommunityByCommunityAndPersonAndLinkType(
+        community, person, type);
+    return linkPersonCommunity.isPresent();
+  }
+
+  public boolean hasAnyLink(Person person, Community community, List<LinkPersonCommunityType> types)
+  {
+
+    final List<LinkPersonCommunity> linkPersonCommunity = linkPersonCommunityRepository.getLinkPersonCommunityByCommunityAndPersonAndLinkTypeIsIn(
+        community, person, types);
+    return !linkPersonCommunity.isEmpty();
+  }
+
+
   @Transactional
   public void createLinkPersonCommunityLink(Community community, Person person,
-      LinkPersonCommunityType type) {
+      LinkPersonCommunityType type)
+  {
 
     createLinkPersonCommunityLink(community, person, type, null);
   }
 
   @Transactional
   public void createLinkPersonCommunityLink(Community community, Person person,
-      LinkPersonCommunityType type, Date expireAt) {
+      LinkPersonCommunityType type, Date expireAt)
+  {
 
     final LinkPersonCommunity newLink = LinkPersonCommunity.builder()
         .community(community)
@@ -49,7 +81,8 @@ public class LinkPersonCommunityService implements
 
   @Override
   public boolean hasLink(Community community, Person person,
-      LinkPersonCommunityType linkPersonCommunityType) {
+      LinkPersonCommunityType linkPersonCommunityType)
+  {
 
     return this.linkPersonCommunityRepository.getLinkPersonCommunityByCommunityAndPersonAndLinkType(
             community, person, linkPersonCommunityType)
@@ -58,7 +91,8 @@ public class LinkPersonCommunityService implements
 
   @Override
   public boolean hasAnyLink(Community community, Person person,
-      List<LinkPersonCommunityType> linkPersonCommunityTypes) {
+      List<LinkPersonCommunityType> linkPersonCommunityTypes)
+  {
 
     return !this.linkPersonCommunityRepository.getLinkPersonCommunitiesByCommunityAndLinkTypeIn(
             community, linkPersonCommunityTypes)
@@ -111,7 +145,8 @@ public class LinkPersonCommunityService implements
   @Transactional
   @Override
   public void deleteLink(Community community, Person person,
-      LinkPersonCommunityType linkPersonCommunityType) {
+      LinkPersonCommunityType linkPersonCommunityType)
+  {
 
     final Optional<LinkPersonCommunity> linkOptional = this.getLink(community, person,
         linkPersonCommunityType);
@@ -135,10 +170,30 @@ public class LinkPersonCommunityService implements
 
   @Override
   public Optional<LinkPersonCommunity> getLink(Community community, Person person,
-      LinkPersonCommunityType linkPersonCommunityType) {
+      LinkPersonCommunityType linkPersonCommunityType)
+  {
 
     return this.linkPersonCommunityRepository.getLinkPersonCommunityByCommunityAndPersonAndLinkType(
         community, person, linkPersonCommunityType);
+  }
+
+  public void removeAnyLink(Person person, Community community, List<LinkPersonCommunityType> types)
+  {
+
+    final List<LinkPersonCommunity> linkPersonCommunity = linkPersonCommunityRepository.getLinkPersonCommunityByCommunityAndPersonAndLinkTypeIsIn(
+        community, person, types);
+    if (linkPersonCommunity.isEmpty()) {
+      return;
+    }
+
+    linkPersonCommunity.forEach(l -> {
+      person.getLinkPersonCommunity()
+          .removeIf(link -> Objects.equals(link.getId(), l.getId()));
+      community.getLinkPersonCommunity()
+          .removeIf(link -> Objects.equals(link.getId(), l.getId()));
+      linkPersonCommunityRepository.delete(l);
+      linkPersonCommunityDeletedPublisher.publish(l);
+    });
   }
 
   @Override
@@ -162,7 +217,8 @@ public class LinkPersonCommunityService implements
   }
 
   @Override
-  public List<LinkPersonCommunity> getLinksByEntity(Community community, Person person) {
+  public List<LinkPersonCommunity> getLinksByEntity(Community community, Person person)
+  {
 
     return this.linkPersonCommunityRepository.getLinkPersonCommunitiesByCommunityAndPerson(
         community, person);
@@ -170,10 +226,19 @@ public class LinkPersonCommunityService implements
 
   @Override
   public List<LinkPersonCommunity> getLinksByEntity(Community community,
-      List<LinkPersonCommunityType> linkPersonCommunityType) {
+      List<LinkPersonCommunityType> linkPersonCommunityType)
+  {
 
     return this.linkPersonCommunityRepository.getLinkPersonCommunitiesByCommunityAndLinkTypeIn(
         community, linkPersonCommunityType);
+  }
+
+  public List<LinkPersonCommunity> getLinkPersonCommunitiesByCommunityAndPersonAndLinkTypeIsIn(
+      Community community, List<LinkPersonCommunityType> types)
+  {
+
+    return linkPersonCommunityRepository.getLinkPersonCommunitiesByCommunityAndLinkTypeIn(community,
+        types);
   }
 
   @Override

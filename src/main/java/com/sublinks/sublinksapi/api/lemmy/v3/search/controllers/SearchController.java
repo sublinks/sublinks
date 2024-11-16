@@ -64,9 +64,9 @@ public class SearchController extends AbstractLemmyApiController {
 
       )})
   @GetMapping
-  SearchResponse search(@Valid final Search searchForm, final JwtPerson jwtPerson) {
+  SearchResponse search(@Valid final Search searchForm, final JwtPerson JwtPerson) {
 
-    final Optional<Person> person = getOptionalPerson(jwtPerson);
+    final Optional<Person> person = getOptionalPerson(JwtPerson);
 
     rolePermissionService.isPermitted(person.orElse(null),
         RolePermissionInstanceTypes.INSTANCE_SEARCH,

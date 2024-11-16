@@ -43,7 +43,6 @@ public class Acl {
 
   @Column(updatable = false, nullable = false, name = "entity_type")
   @Enumerated(EnumType.STRING)
-
   private AuthorizedEntityType entityType;
 
   @Column(updatable = true, nullable = false, name = "entity_id")
@@ -59,7 +58,6 @@ public class Acl {
   @Column(updatable = false, nullable = false, name = "created_at")
   private Date createdAt;
 
-  
   @UpdateTimestamp(source = SourceType.DB)
   @Column(updatable = false, name = "updated_at")
   private Date updatedAt;

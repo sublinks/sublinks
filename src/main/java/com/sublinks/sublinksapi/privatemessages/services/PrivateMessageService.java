@@ -34,9 +34,11 @@ public class PrivateMessageService {
   private final PersonMentionRepository personMentionRepository;
 
   public String generateActivityPubId(
-      final com.sublinks.sublinksapi.privatemessages.entities.PrivateMessage privateMessage) {
+      final com.sublinks.sublinksapi.privatemessages.entities.PrivateMessage privateMessage)
+  {
 
-    String domain = localInstanceContext.instance().getDomain();
+    String domain = localInstanceContext.instance()
+        .getDomain();
     return String.format("%s/private_message/%d", domain, privateMessage.getId());
   }
 
@@ -62,6 +64,7 @@ public class PrivateMessageService {
   public void deletePrivateMessage(final PrivateMessage privateMessage) {
 
     privateMessageRepository.delete(privateMessage);
+    privateMessageDeletedPublisher.publish(privateMessage);
   }
 
   @Transactional
@@ -98,15 +101,43 @@ public class PrivateMessageService {
   }
 
   @Transactional
+  public PrivateMessage deletePrivateMessage(final String id) {
+
+    return this.deletePrivateMessage(id, false);
+  }
+
+  @Transactional
+  public PrivateMessage deletePrivateMessage(final String id, final boolean byAdmin)
+  {
+
+    final PrivateMessage privateMessage = privateMessageRepository.findById(Long.parseLong(id))
+        .orElseThrow();
+    privateMessage.setDeleted(true);
+    privateMessage.setRead(true);
+    privateMessage.setContent("*Permanently deleted by " + (byAdmin ? "admin" : "creator") + "*");
+    this.updatePrivateMessage(privateMessage);
+    return privateMessage;
+  }
+
+  @Transactional
   public List<PrivateMessage> deleteAllPrivateMessagesByPerson(final Person person) {
+
+    return this.deleteAllPrivateMessagesByPerson(person, false);
+
+  }
+
+  @Transactional
+  public List<PrivateMessage> deleteAllPrivateMessagesByPerson(final Person person,
+      final boolean byAdmin)
+  {
 
     final List<PrivateMessage> privateMessages = privateMessageRepository.findAllBySender(person);
     privateMessages.forEach(privateMessage -> {
       privateMessage.setDeleted(true);
       privateMessage.setRead(true);
-      privateMessage.setContent("*Permanently deleted by creator*");
+      privateMessage.setContent("*Permanently deleted by " + (byAdmin ? "admin" : "creator") + "*");
 
-      privateMessageDeletedPublisher.publish(privateMessageRepository.save(privateMessage));
+      this.updatePrivateMessage(privateMessage);
     });
     return privateMessages;
   }

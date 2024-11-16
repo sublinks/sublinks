@@ -131,7 +131,8 @@ public class PostService {
 
   @Transactional
   public void removeAllPostsFromCommunityAndUser(final Community community, final Person person,
-      final boolean removed) {
+      final boolean removed)
+  {
 
     postRepository.allPostsByCommunityAndPersonAndRemoved(community, person,
             List.of(removed ? RemovedState.NOT_REMOVED : RemovedState.REMOVED_BY_COMMUNITY))

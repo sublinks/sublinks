@@ -85,6 +85,13 @@ public class CommentRepositoryImpl implements CommentRepositorySearch {
           cb.equal(roleJoin.get("name"), RoleTypes.ADMIN.toString())));
     }
 
+    if (commentSearchCriteria.search() != null && !commentSearchCriteria.search()
+        .isEmpty()) {
+      predicates.add(cb.equal(
+          cb.function("fn_search_vector_is_same", Boolean.class, commentTable.get("searchVector"),
+              cb.literal(commentSearchCriteria.search())), true));
+    }
+
     if (commentSearchCriteria.savedOnly() != null && commentSearchCriteria.savedOnly()) {
 
       final Join<Comment, LinkPersonComment> linkPersonCommentJoin = commentTable.join(
@@ -120,7 +127,8 @@ public class CommentRepositoryImpl implements CommentRepositorySearch {
 
   @Override
   public List<Comment> allCommentsByCommunityAndPersonAndRemoved(Community community, Person person,
-      @Nullable List<RemovedState> removedStates) {
+      @Nullable List<RemovedState> removedStates)
+  {
 
     if (community == null || person == null) {
       throw new IllegalArgumentException("Community and person must be provided");
@@ -150,7 +158,8 @@ public class CommentRepositoryImpl implements CommentRepositorySearch {
 
   @Override
   public List<Comment> allCommentsByPersonAndRemoved(Person person,
-      @Nullable List<RemovedState> removedStates) {
+      @Nullable List<RemovedState> removedStates)
+  {
 
     if (person == null) {
       throw new IllegalArgumentException("Person must be provided");

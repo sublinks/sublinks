@@ -163,28 +163,27 @@ public class Person implements UserDetails, Principal {
   @Column(nullable = false)
   private String password;
 
-  @Column(nullable = false)
+  @Column(nullable = true, name = "avatar_image_url")
   private String avatarImageUrl;
 
-  @Column(nullable = false, name = "banner_image_url")
+  @Column(nullable = true, name = "banner_image_url")
   private String bannerImageUrl;
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String biography;
 
-  @Column(nullable = false, name = "interface_language")
+  @Column(nullable = true, name = "interface_language")
   private String interfaceLanguage;
 
-  @Column(nullable = false, name = "default_theme")
+  @Column(nullable = true, name = "default_theme")
   private String defaultTheme;
 
-  @Column(nullable = false, name = "default_listing_type")
+  @Column(nullable = true, name = "default_listing_type")
   @Enumerated(EnumType.STRING)
   private ListingType defaultListingType;
 
-  @Column(nullable = false, name = "default_sort_type")
+  @Column(nullable = true, name = "default_sort_type")
   @Enumerated(EnumType.STRING)
-
   private SortType defaultSortType;
 
   @Column(nullable = false, name = "post_listing_type")
@@ -350,5 +349,10 @@ public class Person implements UserDetails, Principal {
     return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer()
         .getPersistentClass()
         .hashCode() : getClass().hashCode();
+  }
+
+  public String getKey() {
+
+    return name + "@" + instance.getDomain();
   }
 }

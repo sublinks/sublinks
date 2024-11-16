@@ -39,13 +39,15 @@ public class JwtFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(final HttpServletRequest request,
       @NonNull final HttpServletResponse response, @NonNull final FilterChain filterChain)
-      throws ServletException, IOException {
+      throws ServletException, IOException
+  {
 
     String authorizingToken = request.getHeader("Authorization");
 
     if (authorizingToken == null && request.getCookies() != null) {
       for (Cookie cookie : request.getCookies()) {
-        if (cookie.getName().equals("jwt")) {
+        if (cookie.getName()
+            .equals("jwt")) {
           authorizingToken = cookie.getValue();
           break;
         }
@@ -69,21 +71,24 @@ public class JwtFilter extends OncePerRequestFilter {
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "invalid_token");
     }
 
-    if (userName != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+    if (userName != null && SecurityContextHolder.getContext()
+        .getAuthentication() == null) {
       final Optional<Person> person = personRepository.findOneByNameIgnoreCase(userName);
       if (person.isEmpty()) {
         throw new UsernameNotFoundException("Invalid name");
       }
 
       if (jwtUtil.validateToken(token, person.get())) {
-
         // Add a check if token and ip was changed? To give like a "warning" to the user that he has a new ip logged into his account
         userDataService.checkAndAddIpRelation(person.get(), request.getRemoteAddr(), token,
             request.getHeader("User-Agent"));
-        final JwtPerson authenticationToken = new JwtPerson(person.get(),
-            person.get().getAuthorities());
+        final JwtPerson authenticationToken = new JwtPerson(person.get(), person.get()
+            .getAuthorities());
         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        SecurityContextHolder.getContext()
+            .setAuthentication(authenticationToken);
+      } else {
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "invalid_token");
       }
     }
     filterChain.doFilter(request, response);

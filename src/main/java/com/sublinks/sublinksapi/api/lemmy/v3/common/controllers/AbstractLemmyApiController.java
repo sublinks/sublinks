@@ -34,7 +34,7 @@ public abstract class AbstractLemmyApiController {
    * @throws ResponseStatusException Exception thrown when Person not present
    */
   public <X extends Throwable> Person getPersonOrThrow(JwtPerson principal,
-      Supplier<? extends X> exceptionSupplier) throws X {
+                                                       Supplier<? extends X> exceptionSupplier) throws X {
 
     return Optional.ofNullable(principal).map(p -> (Person) p.getPrincipal())
         .orElseThrow(exceptionSupplier);

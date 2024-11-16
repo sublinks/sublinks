@@ -3,12 +3,14 @@ package com.sublinks.sublinksapi.authorization.enums;
 public enum RolePermissionPrivateMessageTypes implements RolePermissionInterface {
 
   // Person permissions
-  READ_PRIVATE_MESSAGES("message", AuthorizeAction.READ),
+  READ_PRIVATE_MESSAGES("messages", AuthorizeAction.READ),
+  READ_PRIVATE_MESSAGE("message", AuthorizeAction.READ),
   MARK_PRIVATE_MESSAGE_AS_READ("message-read", AuthorizeAction.UPDATE),
   CREATE_PRIVATE_MESSAGE("message", AuthorizeAction.CREATE),
   UPDATE_PRIVATE_MESSAGE("message", AuthorizeAction.UPDATE),
   DELETE_PRIVATE_MESSAGE("message", AuthorizeAction.DELETE),
   PURGE_PRIVATE_MESSAGE("message", AuthorizeAction.PURGE),
+  PURGE_PRIVATE_MESSAGES("messages", AuthorizeAction.PURGE),
 
   // Report permissions
   REPORT_PRIVATE_MESSAGE("message-report", AuthorizeAction.CREATE);

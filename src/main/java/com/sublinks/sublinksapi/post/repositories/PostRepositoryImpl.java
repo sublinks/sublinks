@@ -1,9 +1,11 @@
 package com.sublinks.sublinksapi.post.repositories;
 
 import com.sublinks.sublinksapi.community.entities.Community;
+import com.sublinks.sublinksapi.instance.models.LocalInstanceContext;
 import com.sublinks.sublinksapi.person.entities.LinkPersonPost;
 import com.sublinks.sublinksapi.person.entities.Person;
 import com.sublinks.sublinksapi.person.enums.LinkPersonPostType;
+import com.sublinks.sublinksapi.person.enums.ListingType;
 import com.sublinks.sublinksapi.post.entities.Post;
 import com.sublinks.sublinksapi.post.models.PostSearchCriteria;
 import com.sublinks.sublinksapi.post.services.PostSearchQueryService;
@@ -28,6 +30,7 @@ public class PostRepositoryImpl implements PostRepositorySearch {
 
   private final EntityManager em;
   private final PostSearchQueryService postSearchQueryService;
+  private final LocalInstanceContext localInstanceContext;
 
   @Override
   public List<Post> allPostsBySearchCriteria(final PostSearchCriteria postSearchCriteria) {
@@ -47,6 +50,10 @@ public class PostRepositoryImpl implements PostRepositorySearch {
     } else {
       searchBuilder.filterByListingType(postSearchCriteria.listingType());
     }
+    if (postSearchCriteria.person() != null
+        && postSearchCriteria.listingType() == ListingType.Subscribed) {
+      searchBuilder.filterByListingType(postSearchCriteria.listingType());
+    }
     if (postSearchCriteria.cursorBasedPageable() != null) {
       searchBuilder.setCursor(postSearchCriteria.cursorBasedPageable());
     }
@@ -54,6 +61,21 @@ public class PostRepositoryImpl implements PostRepositorySearch {
       searchBuilder.setSortType(postSearchCriteria.sortType());
     }
     searchBuilder.setSavedOnly(postSearchCriteria.isSavedOnly());
+
+    if (localInstanceContext.instance() != null && !localInstanceContext.instance()
+        .getInstanceConfig()
+        .isEnableNsfw()) {
+      searchBuilder.setShowNsfw(false);
+    } else if (postSearchCriteria.isShowNsfw() != null) {
+      searchBuilder.setShowNsfw(postSearchCriteria.isShowNsfw());
+    } else if (postSearchCriteria.person() != null) {
+      searchBuilder.setShowNsfw(postSearchCriteria.person()
+          .isShowNsfw());
+    } else {
+      searchBuilder.setShowNsfw(false);
+    }
+
+    searchBuilder.addSearch(postSearchCriteria.search());
 
     Results results = postSearchQueryService.results(searchBuilder);
     results.setPerPage(postSearchCriteria.perPage());
@@ -66,7 +88,8 @@ public class PostRepositoryImpl implements PostRepositorySearch {
 
   @Override
   public List<Post> allPostsByCommunityAndPersonAndRemoved(Community community, Person person,
-      List<RemovedState> removedStates) {
+      List<RemovedState> removedStates)
+  {
 
     if (community == null || person == null) {
       throw new IllegalArgumentException("Community and person cannot be null");
@@ -99,7 +122,8 @@ public class PostRepositoryImpl implements PostRepositorySearch {
 
   @Override
   public List<Post> allPostsByPersonAndRemoved(@Nullable Person person,
-      @Nullable List<RemovedState> removedStates) {
+      @Nullable List<RemovedState> removedStates)
+  {
 
     final CriteriaBuilder cb = em.getCriteriaBuilder();
     final CriteriaQuery<Post> cq = cb.createQuery(Post.class);

@@ -33,7 +33,8 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-validation'
   implementation 'org.springframework.boot:spring-boot-starter-security'
   implementation 'org.springframework.boot:spring-boot-starter-amqp'
-  testImplementation 'org.springframework.amqp:spring-rabbit-test'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    testImplementation 'org.springframework.amqp:spring-rabbit-test'
 
   annotationProcessor "org.hibernate:hibernate-jpamodelgen:6.5.2.Final"
   implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.8.1'

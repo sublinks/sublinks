@@ -57,7 +57,8 @@ public class UrlUtil {
     if (parameters.isEmpty()) {
       return null;
     }
-    return parameters.entrySet().stream()
+    return parameters.entrySet()
+        .stream()
         .map(e -> e.getKey() + "=" + e.getValue())
         .collect(Collectors.joining("&"));
   }
@@ -75,11 +76,31 @@ public class UrlUtil {
 
     try {
       final URL url = new URL(providedUrl);
-      if (!List.of("http", "https", "magnet").contains(url.getProtocol())) {
+      if (!List.of("http", "https", "magnet")
+          .contains(url.getProtocol())) {
         throw new RuntimeException("Invalid URL Scheme");
       }
     } catch (Exception e) {
       throw new RuntimeException("Invalid URL Scheme");
+    }
+  }
+
+  public String cleanUrlProtocol(String providedUrl) {
+
+    try {
+      final URL url = new URL(providedUrl);
+
+      final StringBuilder sb = new StringBuilder();
+
+      sb.append(url.getHost());
+      if (url.getPort() != -1) {
+        sb.append(":")
+            .append(url.getPort());
+      }
+
+      return sb.toString();
+    } catch (MalformedURLException e) {
+      return providedUrl;
     }
   }
 }

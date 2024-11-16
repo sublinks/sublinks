@@ -370,7 +370,8 @@ public class PostController extends AbstractLemmyApiController {
               schema = @Schema(implementation = ApiError.class))})})
   @PostMapping("like")
   public PostResponse like(@Valid @RequestBody CreatePostLike createPostLikeForm,
-      JwtPerson principal) {
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -405,7 +406,9 @@ public class PostController extends AbstractLemmyApiController {
           content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
               schema = @Schema(implementation = ApiError.class))})})
   @GetMapping("like/list")
-  ListPostLikesResponse listLikes(@Valid ListPostLikes listPostLikesForm, JwtPerson principal) {
+  public ListPostLikesResponse listLikes(@Valid ListPostLikes listPostLikesForm,
+      JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -439,9 +442,9 @@ public class PostController extends AbstractLemmyApiController {
           content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
               schema = @Schema(implementation = ApiError.class))})})
   @PutMapping("save")
-  public PostResponse saveForLater(@Valid @RequestBody SavePost savePostForm, JwtPerson jwtPerson) {
+  public PostResponse saveForLater(@Valid @RequestBody SavePost savePostForm, JwtPerson principal) {
 
-    final Person person = getPersonOrThrowUnauthorized(jwtPerson);
+    final Person person = getPersonOrThrowUnauthorized(principal);
     rolePermissionService.isPermitted(person, RolePermissionPostTypes.FAVORITE_POST,
         () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "unauthorized"));
 
@@ -471,7 +474,8 @@ public class PostController extends AbstractLemmyApiController {
               schema = @Schema(implementation = ResponseStatusException.class))})})
   @PostMapping("report")
   public PostReportResponse report(@Valid @RequestBody final CreatePostReport createPostReportForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 

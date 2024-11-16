@@ -8,6 +8,7 @@ import lombok.Builder;
 
 @Builder
 public record PostSearchCriteria(
+    String search,
     SortType sortType,
     ListingType listingType,
     int perPage,
@@ -15,9 +16,9 @@ public record PostSearchCriteria(
     String cursorBasedPageable,
     List<Long> communityIds,
     Person person,
-    boolean isSavedOnly,
-    boolean isLikedOnly,
-    boolean isDislikedOnly
-) {
+    Boolean isShowNsfw,
+    Boolean isSavedOnly,
+    Boolean isLikedOnly,
+    Boolean isDislikedOnly) {
 
 }

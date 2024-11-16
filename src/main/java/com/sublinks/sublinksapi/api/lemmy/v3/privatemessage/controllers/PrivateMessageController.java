@@ -76,7 +76,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
           schema = @Schema(implementation = PrivateMessagesResponse.class))})})
   @GetMapping("list")
   PrivateMessagesResponse list(@Valid final GetPrivateMessages getPrivateMessagesForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person sender = getPersonOrThrowUnauthorized(principal);
 
@@ -97,8 +98,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
         .perPage(perPage)
         .privateMessageSortType(sortType)
         .person(sender)
-        .unreadOnly(getPrivateMessagesForm.unread_only()
-            .orElse(false))
+        .unreadOnly(
+            getPrivateMessagesForm.unread_only() != null && getPrivateMessagesForm.unread_only())
         .build();
 
     final List<PrivateMessage> privateMessages = privateMessageRepository.allPrivateMessagesBySearchCriteria(
@@ -124,7 +125,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
   @PostMapping
   PrivateMessageResponse create(
       @Valid @RequestBody final CreatePrivateMessage createPrivateMessageForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person sender = getPersonOrThrowUnauthorized(principal);
 
@@ -164,7 +166,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
           schema = @Schema(implementation = ApiError.class))})})
   @PutMapping
   PrivateMessageResponse update(@Valid @RequestBody final EditPrivateMessage editPrivateMessageForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -200,7 +203,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
   @PostMapping("delete")
   PrivateMessageResponse delete(
       @Valid @RequestBody final DeletePrivateMessage deletePrivateMessageForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -234,7 +238,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
   @PostMapping("mark_as_read")
   PrivateMessageResponse markAsRead(
       @Valid @RequestBody MarkPrivateMessageAsRead markPrivateMessageAsReadForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -266,7 +271,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
   @PostMapping("report")
   PrivateMessageReportResponse report(
       @Valid @RequestBody final CreatePrivateMessageReport privateMessageReportForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -303,7 +309,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
   @PutMapping("report/resolve")
   PrivateMessageReportResponse reportResolve(
       @Valid @RequestBody ResolvePrivateMessageReport privateMessageReportForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 
@@ -334,7 +341,8 @@ public class PrivateMessageController extends AbstractLemmyApiController {
   @GetMapping("report/list")
   ListPrivateMessageReportsResponse reportList(
       @Valid final ListPrivateMessageReports listPrivateMessageReportsForm,
-      final JwtPerson principal) {
+      final JwtPerson principal)
+  {
 
     final Person person = getPersonOrThrowUnauthorized(principal);
 

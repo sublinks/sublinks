@@ -82,7 +82,7 @@ import org.thymeleaf.context.Context;
 public class UserAuthController extends AbstractLemmyApiController {
 
   private static final Logger logger = LoggerFactory.getLogger(UserAuthController.class);
-  private final JwtUtil jwtUtil;
+  private final JwtUtil lemmyJwtUtil;
   private final PersonService personService;
   private final PersonRepository personRepository;
   private final LocalInstanceContext localInstanceContext;
@@ -146,7 +146,7 @@ public class UserAuthController extends AbstractLemmyApiController {
       throw new RuntimeException("Passwords do not match");
     }
     personService.createPerson(person);
-    String token = jwtUtil.generateToken(person);
+    String token = lemmyJwtUtil.generateToken(person);
 
     boolean send_verification_email = false;
 
@@ -154,12 +154,9 @@ public class UserAuthController extends AbstractLemmyApiController {
       if (instanceConfig.getRegistrationMode() == RegistrationMode.RequireApplication) {
 
         personRegistrationApplicationService.createPersonRegistrationApplication(
-            PersonRegistrationApplication.builder()
-                .applicationStatus(PersonRegistrationApplicationStatus.pending)
-                .person(person)
-                .question(instanceConfig.getRegistrationQuestion())
-                .answer(registerForm.answer())
-                .build());
+            PersonRegistrationApplication.builder().applicationStatus(
+                PersonRegistrationApplicationStatus.pending).person(person).question(
+                instanceConfig.getRegistrationQuestion()).answer(registerForm.answer()).build());
         token = "";
       }
 
@@ -223,11 +220,8 @@ public class UserAuthController extends AbstractLemmyApiController {
     }
     person.setEmailVerified(!send_verification_email);
     personService.updatePerson(person);
-    return LoginResponse.builder()
-        .jwt(token)
-        .registration_created(true)
-        .verify_email_sent(send_verification_email)
-        .build();
+    return LoginResponse.builder().jwt(token).registration_created(true).verify_email_sent(
+        send_verification_email).build();
   }
 
   @Operation(summary = "Fetch a Captcha.")
@@ -240,9 +234,8 @@ public class UserAuthController extends AbstractLemmyApiController {
       return GetCaptchaResponse.builder().build();
     }
     Captcha captcha = captchaService.getCaptcha();
-    return GetCaptchaResponse.builder()
-        .ok(conversionService.convert(captcha, CaptchaResponse.class))
-        .build();
+    return GetCaptchaResponse.builder().ok(
+        conversionService.convert(captcha, CaptchaResponse.class)).build();
   }
 
   @Operation(summary = "Log into lemmy.")
@@ -280,14 +273,13 @@ public class UserAuthController extends AbstractLemmyApiController {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "password_incorrect");
     }
 
-    final String token = jwtUtil.generateToken(person);
+    final String token = lemmyJwtUtil.generateToken(person);
 
     userDataService.checkAndAddIpRelation(person, request.getRemoteAddr(), token,
         request.getHeader("User-Agent"));
 
-    return LoginResponse.builder()
-        .jwt(token)
-        .registration_created(false) // @todo return true if application created
+    return LoginResponse.builder().jwt(token).registration_created(
+            false) // @todo return true if application created
         .verify_email_sent(false) // @todo return true if welcome email sent for verification
         .build();
   }
@@ -347,10 +339,9 @@ public class UserAuthController extends AbstractLemmyApiController {
 
       params.put("person", foundPerson);
 
-      String url = localInstanceContext.instance()
-          .getDomain()
-          .substring(0, localInstanceContext.instance().getDomain().length() - 4)
-          + "/password_change/" + passwordReset.getToken();
+      String url = localInstanceContext.instance().getDomain().substring(0,
+          localInstanceContext.instance().getDomain().length() - 4) + "/password_change/"
+          + passwordReset.getToken();
 
       // #todo: implement the password reset in the frontend
       params.put("resetUrl", url);
@@ -406,7 +397,7 @@ public class UserAuthController extends AbstractLemmyApiController {
     personService.updatePerson(person);
 
     userDataService.invalidateAllUserData(person);
-    String token = jwtUtil.generateToken(person);
+    String token = lemmyJwtUtil.generateToken(person);
 
     userDataService.checkAndAddIpRelation(person, request.getRemoteAddr(), token,
         request.getHeader("User-Agent"));
@@ -484,7 +475,7 @@ public class UserAuthController extends AbstractLemmyApiController {
     personService.updatePerson(person);
     userDataService.invalidateAllUserData(person);
 
-    String token = jwtUtil.generateToken(person);
+    String token = lemmyJwtUtil.generateToken(person);
 
     userDataService.checkAndAddIpRelation(person, request.getRemoteAddr(), token,
         request.getHeader("User-Agent"));
@@ -566,9 +557,7 @@ public class UserAuthController extends AbstractLemmyApiController {
 
     Optional<Person> person = getOptionalPerson(principal);
 
-    return SuccessResponse.builder()
-        .success(person.isPresent())
-        .error(person.isPresent() ? null : "not_logged_in")
-        .build();
+    return SuccessResponse.builder().success(person.isPresent()).error(
+        person.isPresent() ? null : "not_logged_in").build();
   }
 }
