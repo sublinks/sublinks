@@ -72,7 +72,6 @@ public class SublinksJwtFilter extends OncePerRequestFilter {
       }
 
       if (sublinksJwtUtil.validateToken(token, person.get())) {
-
         // Add a check if token and ip was changed? To give like a "warning" to the user that he has a new ip logged into his account
         userDataService.checkAndAddIpRelation(person.get(), request.getRemoteAddr(), token,
             request.getHeader("User-Agent"));
@@ -82,6 +81,8 @@ public class SublinksJwtFilter extends OncePerRequestFilter {
         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext()
             .setAuthentication(authenticationToken);
+      } else {
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "invalid_token");
       }
     }
     filterChain.doFilter(request, response);
